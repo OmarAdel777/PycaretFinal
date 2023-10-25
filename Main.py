@@ -1,9 +1,19 @@
 import pandas as pd
 from sklearn.impute import SimpleImputer
-from pycaret.classification import setup as classification_setup, compare_models as classification_compare_models, tune_model as classification_tune_model, predict_model as classification_predict_model
-from pycaret.regression import setup as regression_setup, compare_models as regression_compare_models, tune_model as regression_tune_model, predict_model as regression_predict_model
-from pycaret.classification import save_model as classification_save_model
-from pycaret.regression import save_model as regression_save_model
+from pycaret.classification import (
+    setup as classification_setup,
+    compare_models as classification_compare_models,
+    tune_model as classification_tune_model,
+    predict_model as classification_predict_model,
+    save_model as classification_save_model,
+)
+from pycaret.regression import (
+    setup as regression_setup,
+    compare_models as regression_compare_models,
+    tune_model as regression_tune_model,
+    predict_model as regression_predict_model,
+    save_model as regression_save_model,
+)
 
 # Step 1: Load Data and Automate Preprocessing
 
@@ -26,7 +36,7 @@ def automate_preprocessing(data):
 
     return data
 
-# Step 2: User Interaction for Column Selection and Task Type Detection
+# Step 2: User Interaction for Column Selection
 
 def get_user_input(data):
     print("Available columns:")
@@ -38,19 +48,6 @@ def get_user_input(data):
 
     return target_column, columns_to_drop
 
-def get_imputation_strategy():
-    categorical_strategy = input("Categorical column imputation strategy (most_frequent or additional_class): ")
-    numerical_strategy = input("Numerical column imputation strategy (mean, median, or mode): ")
-
-    return categorical_strategy, numerical_strategy
-
-def get_task_type():
-    task_type = input("Choose the task type (Enter 'regression' or 'classification'): ").strip().lower()
-    while task_type not in ['regression', 'classification']:
-        print("Invalid input. Please enter 'regression' or 'classification'.")
-        task_type = input("Choose the task type (Enter 'regression' or 'classification'): ").strip().lower()
-    return task_type
-
 # Step 3: Apply Data Imputation, PyCaret, and Hyperparameter Tuning
 
 def apply_imputation_strategy(data, categorical_strategy, numerical_strategy):
@@ -58,8 +55,6 @@ def apply_imputation_strategy(data, categorical_strategy, numerical_strategy):
         if data[col].dtype == 'object':
             if categorical_strategy == 'most_frequent':
                 data[col].fillna(data[col].mode()[0], inplace=True)
-            elif categorical_strategy == 'additional_class':
-                data[col].fillna('missing', inplace=True)
         else:
             if numerical_strategy == 'mean':
                 data[col].fillna(data[col].mean(), inplace=True)
@@ -83,7 +78,6 @@ def run_pycaret(data, target_column, task_type):
         tune_function = regression_tune_model
         predict_function = regression_predict_model
         save_function = regression_save_model
-
 
     setup_function(data, target=target_column)
     best_model = compare_function()
@@ -113,9 +107,15 @@ if __name__ == "__main__":
     if data is not None:
         data = automate_preprocessing(data)
         target_column, columns_to_drop = get_user_input(data)
-        categorical_strategy, numerical_strategy = get_imputation_strategy()
 
-        task_type = get_task_type()
+        # Automatically detect the task type based on the target column's data type
+        if data[target_column].dtype == 'object' or set(data[target_column]) == {0, 1}:
+            task_type = 'classification'
+        else:
+            task_type = 'regression'
+
+        categorical_strategy = input("Categorical column imputation strategy (most_frequent or additional_class): ")
+        numerical_strategy = input("Numerical column imputation strategy (mean, median, or mode): ")
 
         data = apply_imputation_strategy(data, categorical_strategy, numerical_strategy)
         data.drop(columns=columns_to_drop, inplace=True)
