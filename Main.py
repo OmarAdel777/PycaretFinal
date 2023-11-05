@@ -109,7 +109,7 @@ if __name__ == "__main__":
         target_column, columns_to_drop = get_user_input(data)
 
         # Automatically detect the task type based on the target column's data type
-        if data[target_column].dtype == 'object' or set(data[target_column]) == {0, 1}:
+        if data[target_column].dtype == 'object' or len(data[target_column].unique()) >= 2:
             task_type = 'classification'
         else:
             task_type = 'regression'
